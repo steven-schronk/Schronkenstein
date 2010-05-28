@@ -1,11 +1,15 @@
 # Wall definitions for map
 
+tex=031-rusticbrick
+floor=0,0:20,40
+
 tex=BookshelfL
-wall = 0 , 0 : 0 , 20	# this line has extra spaces
- wall=0,20:10,20	# this line has a space at the beginning
+wall = 0 , 0 : 0 , 40	# this line has extra spaces
+ wall=0,40:20,40	# this line has a space at the beginning
 	tex=BookshelfD	# this line has a tab at the beginning
-wall=10,20:10,0
-wall=10,0:0,0
+wall=20,40:20,0
+wall=20,0:0,0
+
 
 # Character definitions for map
 

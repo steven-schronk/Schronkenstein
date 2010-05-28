@@ -39,10 +39,11 @@ void line_clean(char *line)
 }
 
 /* open walls file and gather map data */
-void map_init(char *mapname, struct Wall *walls, struct Map *map)
+void map_init(char *mapname, struct Wall *walls, struct Wall *floors, struct Map *map)
 {
 	FILE *pMapfile;
 	int wall_count = 0;
+	int floor_count = 0;
 	char line[80];
 	char *token;
 	int tokcount = 0;
@@ -63,6 +64,28 @@ void map_init(char *mapname, struct Wall *walls, struct Map *map)
 		/* place each line into correct data structure */
 		switch(line[0])
 		{
+			case 'f':
+				tokcount = 1;
+				token = strtok(line, "=,:");
+				while (token != NULL)
+				{
+					token = strtok(NULL, "=,:");
+					if(token != NULL)
+					{
+						if(tokcount == 1) { floors[floor_count].xStart = atoi(token); }
+						if(tokcount == 2) { floors[floor_count].yStart = atoi(token); }
+						if(tokcount == 3) { floors[floor_count].xStop  = atoi(token); }
+						if(tokcount == 4) { floors[floor_count].yStop  = atoi(token); }
+					}
+					tokcount++;
+				}
+				floors[floor_count].texture = malloc((strlen(texture)+1) * sizeof( char *));  /* get memory for tex name */
+				if(floors[floor_count].texture == NULL) { exit_error(0, "Could not allocate enough memory"); }
+				/* copy texture name to this struct */
+				strcpy(floors[floor_count].texture, texture);
+				map->FloorCount++;
+				floor_count++;
+				break;
 			case 'w':
 				printf("Found Wall\n");
 				tokcount = 1;

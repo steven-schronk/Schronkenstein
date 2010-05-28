@@ -11,18 +11,19 @@
 #include "types.h"
 
 struct Wall walls[MAX_WALLS];
+struct Wall floors[MAX_FLOORS];
 struct Map map;
 struct Input input;
 
 /* TODO: REMOVE THESE AND MAKE A STRUCT OF THE DATA */
-float xpos = 0, ypos = 0, zpos = 0, xrot = 0, zrot = 0, angle = 0.0;
+float xpos = 0, ypos = 0, xrot = 0, zrot = 0, angle = 0.0; /* removed: y-pos = 0 */
 float lastx, lasty;
 
 /* positions of the cubes */
 float positiony[10];
 float positionx[10];
-float cRadius = 10.0f;
 
+/* TODO: Delete later */
 void cubepositions(void) /* set the positions of the cubes */
 {
 	int i = 0;
@@ -33,7 +34,7 @@ void cubepositions(void) /* set the positions of the cubes */
 	}
 }
 
-/* draw the cube */
+/* TODO: Delete later */
 void cube(void)
 {
 	int i = 0;
@@ -71,18 +72,24 @@ void display(void)
 
 	glLoadIdentity();
 
-	glTranslatef(0.0f, 0.0f, -cRadius);
 
 	glRotatef(xrot, 1.0f, 0.0f, 0.0f);
 	glColor3f(1.0f, 0.0f, 0.0f);
-	glutSolidCube(2);	/* Our character to follow */
+
 
 	/* rotate and position camera */
 	glRotatef(zrot, 0.0f, 0.0f, 1.0f);  /* rotate our camera on the y-axis (up and down)*/
-	glTranslated(xpos, -zpos, 0.0f);
+	glTranslated(xpos, -ypos, -4.0f);
 
 	draw_coords();
 
+	/* draw floors */
+	for( i = 0; i < map.FloorCount; i++)
+	{
+		draw_floor(floors[i].xStart, floors[i].xStop, floors[i].yStart, floors[i].yStop);
+	}
+
+	/* draw walls */
 	for( i = 0; i < map.WallCount; i++)
 	{
 		draw_wall(walls[i].xStart, walls[i].xStop, walls[i].yStart, walls[i].yStop);
@@ -90,22 +97,33 @@ void display(void)
 
 	glColor3f(1.0f, 1.0f, 1.0f);
 
-	cube();
-
 	glFlush();
 	glutSwapBuffers();
 }
 
 void init(void)
 {
+	TextureImage tex;
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glShadeModel (GL_SMOOTH);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glEnable (GL_DEPTH_TEST);
-    glEnable (GL_LIGHTING);
-    glEnable (GL_LIGHT0);
-    glEnable (GL_COLOR_MATERIAL);
-    glShadeModel (GL_SMOOTH);
+	glEnable (GL_DEPTH_TEST);
+	glEnable (GL_LIGHTING);
+	glEnable (GL_LIGHT0);
+	glEnable (GL_COLOR_MATERIAL);
+	glEnable (GL_TEXTURE_2D);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	glShadeModel (GL_SMOOTH);
+
+	LoadTGA(&tex, "../textures/BookshelfL.tga");
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glGenTextures(1, &tex.texID);
+	glBindTexture(GL_TEXTURE_2D, tex.texID);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex.width, tex.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.imageData);
 }
 
 void reshape(int w, int h)
@@ -116,6 +134,7 @@ void reshape(int w, int h)
 	gluPerspective(60, (GLfloat)w / (GLfloat)h, 0.1, 100.0);
 	glMatrixMode(GL_MODELVIEW);
 }
+
 void mouse(int x, int y)
 {
 	input.mouseX = x; /* makes compiler happy */
@@ -146,8 +165,8 @@ void keyboard(unsigned char key, int x, int y)
 		zrotrad = (zrot / 180 * PI);
 		xrotrad = (xrot / 180 * PI);
 		xpos += (float)(sin(zrotrad)) ;
-		zpos -= (float)(cos(zrotrad)) ;
-		ypos -= (float)(sin(xrotrad)) ;
+		ypos -= (float)(cos(zrotrad)) ;
+		/*y-pos -= (float)(sin(xrotrad)) ;*/
 	}
 
 	if(key == 'w') /* move forward */
@@ -155,22 +174,22 @@ void keyboard(unsigned char key, int x, int y)
 		zrotrad = (zrot / 180 * PI);
 		xrotrad = (xrot / 180 * PI);
 		xpos -= (float)(sin(zrotrad));
-		zpos += (float)(cos(zrotrad)) ;
-		ypos += (float)(sin(xrotrad));
+		ypos += (float)(cos(zrotrad)) ;
+		/*y-pos += (float)(sin(xrotrad));*/
 	}
 
 	if(key == 'a') /* strafe left */
 	{
 		zrotrad = (zrot / 180 * PI);
 		xpos -= (float)(cos(zrotrad)) * 0.1;
-		zpos -= (float)(sin(zrotrad)) * 0.1;
+		ypos -= (float)(sin(zrotrad)) * 0.1;
 	}
 
 	if(key == 'd') /* strafe right */
 	{
 		zrotrad = (zrot / 180 * PI);
 		xpos += (float)(cos(zrotrad)) * 0.1;
-		zpos += (float)(sin(zrotrad)) * 0.1;
+		ypos += (float)(sin(zrotrad)) * 0.1;
 	}
 
 	if(key == 'f') /* toggle wireframe */
@@ -182,13 +201,13 @@ void keyboard(unsigned char key, int x, int y)
 	{
 		exit(0);
 	}
-	/* printf("xpos:%f\typos:%f\tzpos:%f\txrot:%f\tzrot:%f\tangle:%f\t\n", xpos, ypos, zpos, xrot, zrot, angle); */
+	/* printf("xpos:%f\ty-pos:%f\typos:%f\txrot:%f\tzrot:%f\tangle:%f\t\n", xpos, y-pos, ypos, xrot, zrot, angle); */
 	display();
 }
 
 int main(int argc, char **argv)
 {
-	map_init("../maps/1.map", walls, &map);
+	map_init("../maps/1.map", walls, floors, &map);
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
@@ -200,7 +219,7 @@ int main(int argc, char **argv)
 	/* glutFullScreen(); */
 
 	init();
-	cubepositions();
+	/*cubepositions();*/
 
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
